@@ -1,0 +1,17 @@
+Presently, the Makefile is designed to produce Type1 outline fonts
+by using the "mftrace" tool.  If you have the tool available and
+in your PATH, you can simply invoke
+
+        make all
+
+or
+
+        make dist
+
+to produce Type1 fonts or a tar.gz distribution file.  The Makefile also 
+has rules for building TrueType and bitmap versions of Claudius Roman built
+will require minor editing to enable this.
+
+claudius-regular.mf and claudius-bold.mf contain the parameters for
+producing the regular and boldface versions of the font respectively. Just
+about all the other common parameters are found in claudius.mf.

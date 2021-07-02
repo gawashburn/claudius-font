@@ -1,0 +1,5 @@
+% NFSS description file for Claudius Roman
+% $Id$
+\DeclareFontFamily{T1}{Claudius}{}
+\DeclareFontShape{T1}{Claudius}{m}{n}{ <-> claudius-regular }{}
+\DeclareFontShape{T1}{Claudius}{b}{n}{ <-> claudius-bold }{}

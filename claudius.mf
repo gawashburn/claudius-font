@@ -1,0 +1,1012 @@
+% Main code for Claudius Roman $Id$
+% Copyright (C) 2005 Geoffrey Alan Washburn
+%
+% This program is free software; you can redistribute it and/or
+% modify it under the terms of the GNU General Public License
+% as published by the Free Software Foundation; either version 2
+% of the License, or (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program; if not, write to the Free Software
+% Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307,
+% USA.
+%
+% As a special exception, if you create a document which uses this font,
+% and embed this font or unaltered portions of this font into the document,
+% this font does not by itself cause the resulting document to be covered by
+% the GNU General Public License. This exception does not however invalidate
+% any other reasons why the document might be covered by the GNU General
+% Public License. If you modify this font, you may extend this exception
+% to your version of the font, but you are not obligated to do so. If you
+% do not wish to do so, delete this exception statement from your version.
+
+mode_setup;
+
+% Make the glyphs eighteen units high.
+ht# := 18u#;
+
+% "Full" width characters are 18 units
+fwidth := 18;
+
+% "Half" width characters 
+hwidth := fwidth/2;
+
+% "Three-quarters" width characters
+mwidth := fwidth*(3/4);
+
+% "Two-thirds" width characters
+twidth := fwidth*(2/3);
+
+% Approximate height of bar lines 
+barheight# := 0.45ht#;
+
+% Horizontal offset of the glyph from the bounding box 
+offset# :=  2u#;
+
+% Vertical pen thickness
+py# := 0.1px#; % We want to make it nearly a rectangle.
+
+% Thicknesses adjusting for angle
+% Used to fake some things using penstroke.
+px_td# := px#*(cosd 20);  % How wide is the pen when rotated twenty degrees
+py_td# := px#*(sind 20);  % How tall is the pen when rotated twenty degress
+
+% Convert from "virtual" to "real" dimensions.
+define_whole_pixels(u);
+define_blacker_pixels(px,py);
+define_blacker_pixels(px_td,py_td);
+define_good_x_pixels(offset);
+define_good_y_pixels(barheight);
+
+% 20 degree (td) pen
+pickup pencircle xscaled px yscaled py rotated 20;
+pen_td := savepen;
+
+% 45 degree (ffd) pen
+pickup pencircle xscaled px yscaled py rotated 45;
+pen_ffd := savepen;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Common setup for each letter.
+def begincdchar(expr code, width) =
+  % Allow for 2 offset of space on each side
+  beginchar(code, (width*u#) + 2offset#, ht#, 0);
+  
+  % In the proofs draw a line at the barheight. 
+  proofrule((0, barheight), (w, barheight));
+  
+  % In the proofs draw vertical lines at offset and w - offset. 
+  proofrule((offset, 0), (offset, h));
+  proofrule((w - offset, 0), (w - offset, h));
+enddef;
+
+% Routines for drawing the the left and right sides of
+% a superellipse arc.  Mostly stolen from Knuth's Computer Modern.
+vardef super_arc.l(suffix $, $$) =
+pair center, corner;
+if y$ = y$r: 
+  center = (x$$l, y$l); 
+  corner = (x$l, y$$l);
+else:
+  center = (x$l, y$$l);
+  corner = (x$$l, y$l);
+fi
+z$l{corner - z$l} ... superness[center, corner]{z$$l - z$l} ...
+{z$$l-corner}z$$l
+enddef;
+
+vardef super_arc.r(suffix $, $$) =
+pair center, corner;
+if y$ = y$r: 
+  center = (x$$r, y$r); 
+  corner = (x$r, y$$r);
+else:
+  center = (x$r, y$$r);
+  corner = (x$$r, y$r);
+fi
+z$r{corner - z$r} ... superness[center, corner]{z$$r - z$r} ...
+{z$$r-corner}z$$r
+enddef;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("A", mwidth);
+  % Most strokes are at 45 degrees
+  pickup pen_ffd; 
+  
+  % Make the apex of the "A" exactly in the middle.
+  x1 = 0.5w;
+
+  % Left leg starts a offset
+  x4 = offset;
+
+  % Right leg starts with the same offset as the left leg.
+  x5 = w - x4;
+
+  % Make the top flush.  
+  top y1 = h;  
+  
+  % Crossbar is drawn at a twenty degre angle
+  % Kind of hackish.  top, etc. depend on current pen size and
+  % we switch pens later...
+  pickup pen_td; 
+  % Make the crossbar fall below barheight.
+  top y2 = top y3 = barheight;
+  
+  % Switching back pens so that top, bot, etc. are computed correctly.
+  pickup pen_ffd; 
+  y4 = y5 = 0;
+ 
+  % So that when drawing the crossbar, we are flush with the legs,
+  % we draw it with two penstroke points.
+
+  % Left of the crossbar starts with an angle that matches the left leg. 
+  penpos2(py_td, angle(z1-z4));
+  % Constraint so that the point falls somewhere on the left leg
+  z2 = whatever[z4, z1];
+ 
+  % Right of the crossbar ends with an angle that matches the right leg.
+  penpos3(py_td, angle(z1-z5));
+  % Constraint so that the point falls somewhere on the right leg.
+  z3 = whatever[z1, z5];
+  
+  % Draw the two legs.
+  draw z4 -- z1 -- z5;
+
+  % Draw the crossbar.
+  penstroke z2e .. z3e;
+
+  % Label the points for inspection on the proofs.
+  penlabels(1, 2, 3, 4, 5);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("B", twidth);
+  % Most strokes are drawn at a twenty degree angle
+  pickup pen_td;
+
+  % TODO: abstract this code for use with P and R too.
+
+  % Define the two bowls of the B
+  % Top bowl
+  penpos1(px, 20);
+  penpos2(py_td, -90);
+  penpos3(px, 20);
+  penpos4(py_td, 90);
+  
+  % Bottom bowl
+  penpos5(px, 0);
+  penpos6(py_td, -90);
+  penpos7(px, 180);
+  penpos8(py_td, 90);
+
+  % Left of the stem is flush with the offset.
+  lft x1 = lft x2 = lft x3 = offset;
+
+  % TODO: What do I call these points?
+  x5 = x7 = w - x1;
+  
+  lft x4 = lft x6 = lft x8 = 0.5w;
+  
+  y3 = y4;
+  y2 = y6;
+  y1 = y8;
+  y5 = 0.5[y2, y3];
+  y7 = 0.5[y1, y2];
+
+  % Bottom of the stem is flush with the bottom.
+  bot y1 = 0;
+  % Top of the stem is flush with the top.
+  top y3 = h;
+
+  % Crossbar rests above the barheight.
+  bot y2 = barheight;
+
+  % Draw the stem
+  draw z3 -- z1;
+
+  % Draw the bowls
+  penstroke z3e..super_arc.e(4, 5) & super_arc.e(5, 6) .. z2e;
+  penstroke super_arc.e(6, 7) & super_arc.e(7, 8) .. z1e;
+  
+  penlabels(1, 2, 3, 4, 5, 6, 7, 8);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("C", fwidth);
+  % Define a path to perform scratch calculuations
+  path p;
+
+  % The complete stroke is at a twenty degree angle
+  pickup pen_td; 
+
+  % Essentially, build a circular path bounded offset on
+  % the left and the right, and the top/bottom modulo some 
+  % overshoot.
+  x1 = x4 = 0.5w;
+  lft x2 = offset;
+  lft x3 = w - x2;
+  y1 = h;
+  y4 = 0;
+  y2 = y3 = barheight;
+  
+  % Construct a path using these points
+  p := z3 .. z1 .. z2 .. z4 .. cycle;
+
+  % Find a point between the first and second points on that path
+  z5 = point 0.5 of p;
+  % Find a point between the third and forth points on that path
+  z6 = point 3.5 of p;
+ 
+  % Draw everything with a single stroke
+  draw z5 .. z1 .. z2 .. z4 .. z6;
+  
+  % Draw the labels for the proofs
+  penlabels(1, 2, 3, 4, 5, 6);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("D", fwidth);
+  % All strokes are at a twenty degree angle
+  pickup pen_td;
+  
+  lft x1 = lft x2 = lft x3 = offset;
+  rt x5 = w - x1;
+ 
+  % Have the curve for bowl start at the mid-point.
+  x4 = x6 = 0.5w;
+  
+  % Make the top and bottom of the stem flush.
+  bot y1 = 0;
+  top y3 = h;
+ 
+  % Have the curve change directions at barheight.
+  y2 = barheight;
+  
+  % Line up the heights
+  y3 = y4;
+  y1 = y6;
+  y5 = y2;
+
+  % Draw the stem
+  draw z3 -- z1;
+ 
+  % Draw the bowl. 
+  draw z3 -- z4 .. z5 .. z6 -- z1;
+  
+  % Label the points for the proofs.
+  penlabels(1, 2, 3, 4, 5, 6);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("E", hwidth);
+  % All strokes are at twenty degrees
+  pickup pen_td;
+
+  % Make the left of the stem flush with offset
+  lft x1 = lft x2 = lft x3 = offset;
+  x6 = w - x1;
+  x4 = x6 - u;
+  x5 = 0.5w;
+  y1 = y6;
+  y2 = y5;
+  y3 = y4;
+  bot y1 = 0;
+  top y3 = h;
+  bot y2 = barheight;
+  draw z6 -- z1 -- z3 -- z4;
+  draw z2 -- z5;
+
+  penlabels(1, 2, 3, 4, 5, 6);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("F", hwidth);
+  % All strokes are at twenty degrees
+  pickup pen_td;
+  lft x1 = lft x2 = lft x3 = offset;
+  x4 = w - x1;
+  x5 = 0.5w;
+  y2 = y5;
+  y3 = y4;
+  y1 = 0;
+  top y3 = h;
+  top y2 = barheight;
+  draw z1 -- z3 -- z4;
+  draw z2 -- z5;
+  labels(1, 2, 3, 4, 5);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("G", fwidth);
+  path p;
+  pickup pen_td; 
+  x1 = x4 = 0.5w;
+  lft x2 = offset;
+  lft x3 = w - x2;
+  y1 = h;
+  y4 = 0;
+  y2 = y3 = barheight;
+  p := z3 .. z1 .. z2 .. z4 .. cycle;
+  z5 = point 0.55 of p;
+  z6 = point 3.5 of p;
+  y7 = y3;
+  x7 = x6;
+  draw z5 .. z1 .. z2 .. z4 .. z6 -- z7;
+  labels(1, 2, 3, 4, 5, 6, 7);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("H", mwidth);
+  % All strokes are at twenty degrees
+  pickup pen_td;
+
+  % Make the left and right stems flush with the offset.
+  lft x1 = lft x2 = lft x3 = offset;
+  x4 = x5 = x6 = w - x1;
+  
+  % Make the top and bottom flush 
+  bot y1 = 0;
+  top y3 = h;
+
+  % Have the crossbar above the barheight.
+  bot y2 = barheight;
+
+  % Make all the heights the same on both stems
+  y1 = y6;
+  y2 = y5;
+  y3 = y4;
+
+  % Draw the left stem
+  draw z3 -- z1;
+
+  % Draw the right stem
+  draw z4 -- z6;
+
+  % Draw the crossbar
+  draw z2 -- z5;
+
+  % Label the points for the proofs
+  labels(1, 2, 3, 4, 5, 6);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% "I" gets a special width because it so thin
+begincdchar("I", px_td#/u#);
+  % The only stroke is at twenty degrees
+  pickup pen_td; 
+  
+  % Entire stem exactly in the middle
+  x1 = x2 = 0.5w; 
+  
+  % Start at the top, and end at the bottom.
+  y1 = h;
+  y2 = 0;
+
+  % Draw the stem
+  draw z1 .. z2;
+
+  % Labels for the proofs
+  labels(1, 2);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("J", hwidth);
+  % Define a path for temporary construction
+  path p;
+
+  % The only stroke is twenty degrees
+  pickup pen_td; 
+
+  % Make the stem fall exactly in the middle
+  x1 = x2 = x3 = 0.5w;
+  y1 = h;
+  y2 = barheight;
+  y3 = 0.25h;
+  
+  % Pick a point out to the left of the offset 
+  x4 = offset-px;  
+  bot y4 = 0;
+  
+  % Points 2 through 4 are used to construct a curve
+  p := z2 .. tension 3 .. z3 .. z4;
+  % But we are only interested in a small segment.
+  % The part between that ends between the first and the second points 
+  % to be exact.   
+  z5 = point 1.5 of p;
+
+  % Furthermore, because point 5 may not rest on the bottom, we 
+  % define point 6 to be have the same x coordinate, but intersect the 
+  % bottom.
+  x6 = x5;
+  y6 = 0;
+ 
+  % Stroke between the points we have constructed.  Use a high
+  % tension, otherwise the curved part kind of bulges to the right.
+  draw z1 -- z2 .. tension 3 .. z3 .. z6;
+  
+  % Place the points for the proofs
+  labels(1, 2, 3, 4, 5, 6);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("K", mwidth);
+  pickup pen_td;
+  lft x1 = lft x2 = lft x3 = offset;
+  x4 = x6 = w - x1;
+  y1 = y6;
+  y3 = y4;
+  bot y1 = 0;
+  top y3 = h;
+  % FIX
+  top y2 = barheight;
+  z5 = whatever[z2, z4];
+  bot y5 = barheight;
+  draw z3 -- z1;
+  draw z4 -- z2;
+  draw z5 -- z6;
+  
+  penlabels(1, 2, 3, 4, 5, 6);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("L", hwidth);
+  % The only stroke is at a twenty degree angle 
+  pickup pen_td;
+
+  % Left of the stem is flush with offset
+  lft x1 = lft x2 = offset;
+
+  % Stem starts at the top, flush with the bottom
+  y1 = h;
+  bot y2 = 0;
+  
+  % FIX: Say something here? 
+  y2 = y3;
+  x3 = w - offset;
+  
+  % Draw the stem and the foot
+  draw z1 -- z2 -- z3;
+
+  % Labels for the proofs
+  penlabels(1, 2, 3);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% For M, we want its legs to stick out some from mwidth, but
+% we also want METAFONT to correclty record the bounding box so
+% extreme kerning is not required, so we cheat some.
+begincdchar("M", mwidth + 6offset#);
+  % The only stroke is at a forty-five degree angle
+  pickup pen_ffd;
+  
+  % Make the left and right legs symmetric,
+  % and stick out slightly.
+  x1 = 3offset - px;
+  x2 = 3offset;   
+  x4 = w - x2; 
+  x5 = w - x1;
+
+  % Place the dip at the midpoint.
+  x3 = 0.5w;
+
+  % Make the top and bottom overshoot slightly.
+  y2 = y4 = h;
+  y1 = y3 = y5 = 0;
+ 
+  % Draw the stroke
+  draw z1 -- z2 -- z3 -- z4 -- z5;
+
+  % Label the points for the proofs.
+  penlabels(1, 2, 3, 4, 5);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("N", mwidth);
+  % The only stroke is at a forty-five degree angle
+  pickup pen_ffd; 
+
+  % Make the left and right stems flush with the offset
+  lft x1 = lft x2 = offset;
+  x3 = x4 = w - x1;
+  
+  % Make the top and bottom overshoot a little.
+  y1 = y3 = 0;
+  y2 = y4 = h;
+  
+  % Draw the stroke
+  draw z1 -- z2 -- z3 -- z4;
+
+  % Label the points for the proofs
+  penlabels(1, 2, 3, 4);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("O", fwidth);
+  % The only stroke is at a twenty degree angle
+  pickup pen_td; 
+
+  % Define a circular path bounded by offset and the top and bottom
+  % modulo overshoot.
+  x1 = x4 = 0.5w;
+  lft x2 = offset;
+  x3 = w - x2;
+  y1 = h;
+  y4 = 0;
+  y2 = y3 = barheight;
+
+  % Draw the path as a cycle.
+  draw z3 .. z1 .. z2 .. z4 .. cycle;
+
+  % Labels for the proofs
+  penlabels(1, 2, 3, 4);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("P", twidth);
+  pickup pen_td;
+
+  penpos1(px, 20);
+  penpos2(py_td, -90);
+  penpos3(px, 20);
+  penpos4(py_td, 90);
+  penpos5(px, 0);
+  penpos6(py_td, -90);
+
+  lft x1 = lft x2 = lft x3 = offset;
+  x5 = w - x1;
+  
+  lft x4 = lft x6 = lft x8 = 0.5w;
+  
+  y3 = y4;
+  y2 = y6;
+  y1 = y8;
+  y5 = 0.5[y2, y3];
+
+  bot y1 = 0;
+  top y3 = h;
+  bot y2 = barheight;
+  draw z3 -- z1;
+  penstroke z3e..super_arc.e(4, 5) & super_arc.e(5, 6) .. z2e;
+  
+  penlabels(1, 2, 3, 4, 5, 6);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("Q", fwidth);
+  path p;
+  pickup pen_td; 
+  x1 = x4 = 0.5w;
+  lft x2 = offset;
+  x3 = w - x2;
+  y1 = h;
+  y4 = 0;
+  y2 = y3 = barheight;
+  p := z3 .. z1 .. z2 .. z4 .. cycle;
+  draw p;
+  z6 = point 3.5 of p;
+  x7 = x3;
+  y7 = 0;
+  z5 - z6 = z6 - z7;
+  draw z5 -- z7;
+  labels(1, 2, 3, 4, 5, 6, 7);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("R", twidth);
+  pickup pen_td;
+
+  penpos1(px, 20);
+  penpos2(py_td, -90);
+  penpos3(px, 20);
+  penpos4(py_td, 90);
+  penpos5(px, 0);
+  penpos6(py_td, -90);
+
+  lft x1 = lft x2 = lft x3 = offset;
+  x5 = lft x7 = w - x1;
+  
+  lft x4 = lft x6 = lft x8 = 0.5w;
+  
+  y3 = y4;
+  y2 = y6;
+  y1 = y8;
+  y5 = 0.5[y2, y3];
+  y7 = y1;
+
+  bot y1 = 0;
+  top y3 = h;
+  bot y2 = barheight;
+  draw z3 -- z1;
+  penstroke z3e..super_arc.e(4, 5) & super_arc.e(5, 6) .. z2e;
+  draw z6 -- z7;
+  
+  penlabels(1, 2, 3, 4, 5, 6, 7);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("S", twidth);
+  pickup pen_td; 
+  x1 = x4 = x7 = 0.5w; 
+  lft x2 = lft x5 = offset; 
+  x3 = x6 = w - x2;
+ 
+  y1 = h;
+  bot y4 = barheight;
+  y7 = 0;
+  y2 = y3 = 0.5[y1, y4];
+  y5 = y6 = 0.5[y4, y7];
+
+  draw z3 .. z1 .. z2 .. z4 .. z6 .. z7 .. z5; 
+  labels(1, 2, 3, 4, 5, 6, 7);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("T", mwidth);
+  % The entire glyph is drawn at twenty degrees
+  pickup pen_td;
+
+  % If the mid-point is such that it won't result
+  % in a symmetric point when digitized tweak the 
+  % width of the entire gylph.
+  if 0.5w <> good.x 0.5w: change_width; fi
+
+  % Left and right edges of the crossbar are at
+  % the offset, with "epsilon" adjustment.
+  lft x1 = offset-eps; 
+  x2 = w - x1;
+
+  % Stem points are at the midpoint.
+  x3 = x4 = 0.5w;
+
+  % All points on the crossbar are the same.
+  y1 = y2 = y3;
+
+  % Flush at the top, overshoot a little at the bottom.
+  top y1 = h;
+  y4 = 0;
+  
+  % Draw the stem
+  draw z3 -- z4;
+
+  % Draw the crossbar
+  draw z1 -- z2; 
+
+  % Label the points for the proofs
+  penlabels(1, 2, 3, 4);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("U", mwidth);
+  % The entire glyph is drawn at twenty degrees
+  pickup pen_td; 
+ 
+  % We want to use a super-ellipse for the bowl,
+  % so set up the three points for the construction.  
+  penpos2(px, 20);
+  penpos3(px, 20);
+  penpos4(px, 200);
+  
+  % Make the glyph centered at the middle  
+  x3 = 0.5w; 
+
+  % Make the left and right edges flush with offset
+  lft x1 = lft x2 = offset;
+  x4 = x5 = w - x1;
+
+  % Have the top and bottom overshoot a little
+  y1 = y5 = h;
+  y3 = 0;
+
+  % Start curving toward the bowl at the barheight
+  y2 = y4 = barheight;
+  
+  % Draw the vertical bits.
+  draw z1 -- z2;
+  draw z4 -- z5;
+ 
+  % Draw the supper-ellipses for the bowl.
+  penstroke super_arc.e(3, 2);
+  penstroke super_arc.e(3, 4);
+
+  % Label points for the proofs
+  penlabels(1, 2, 3, 4, 5);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("V", mwidth);
+  % The entire stroke is drawn at forty-five degrees
+  pickup pen_ffd;
+
+  % Switch directions exactly in the middle.
+  x1 = 0.5w;
+
+  % Make the horizontal extents slightly larger than the offset
+  x2 = offset;
+  x3 = w - x2;
+
+  % Make the vertical extents slightly larger than the bounding box
+  y1 = 0;
+  y2 = y3 = h;
+
+  % Draw the stroke
+  draw z2 -- z1 -- z3;
+  
+  % Place the points for the proofs
+  penlabels(1, 2, 3);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+% Cheating similar to "M" required here
+begincdchar("W", mwidth+6offset#);
+  pickup pen_ffd; 
+ 
+  % Calculate the real width by eliminating the offset.
+  wreal = (w - 6offset);
+
+  % Overlap parameter.  The W is really made up of two
+  % Vs that by default touch.  Setting the overlap
+  % parameter greater than 0 will cause the Vs to cross
+  % to some extent.
+  overlap = wreal/9;
+ 
+  % Center of the left V is at offset, with overlap adjustment  
+  x1 = 3offset + overlap;
+
+  % Center of the right V is placed symmetrically.
+  x4 = w - x1;
+  
+  % Make the vertical extents slightly larger than the bounding box
+  y1 = y4 = 0;
+  y2 = y3 = y5 = y6 = h;
+  
+  % Calculate the left and right extents of the Vs.
+  x2 = x1 - (wreal/2);
+  x3 = x1 + (wreal/2);
+  
+  x5 = x4 - (wreal/2);
+  x6 = x4 + (wreal/2);
+  
+  % Draw the left V
+  draw z2 -- z1 -- z3;
+  
+  % Draw right V
+  draw z5 -- z4 -- z6;
+
+  % Place the points for the proofs
+  penlabels(1, 2, 3, 4, 5, 6);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("X", mwidth);
+  % All strokes are drawn at a twenty degree angle
+  pickup pen_td;
+
+  % Make it extend slightly beyond the offsets horizontally.
+  x1 = x2 = offset;
+  x3 = x4 = w - x1;
+ 
+  % Make the top and bottom flush
+  bot y1 = bot y3 = 0;
+  top y2 = top y4 = h;
+
+  % Draw the two strokes 
+  draw z1 -- z4;
+  draw z2 -- z3;
+
+  % Place points for the proofs
+  penlabels(1, 2, 3, 4);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("Y", mwidth);
+  % All strokes at a twenty degree angle
+  pickup pen_td;
+
+  % Make the extents the offset
+  x1 = offset;
+  x4 = w - x1;
+  
+  % Make the stem fall exactly in the middle
+  x2 = x3 = 0.5w;
+  
+  % Make the stem start slightly above the barheight
+  bot y2 = barheight;
+
+  % Make the bottom and top stick out slightly
+  y3 = 0;
+  y1 = y4 = h;
+
+  % Draw the top
+  draw z1 -- z2 -- z3;
+
+  % Draw the stem
+  draw z2 -- z4;
+
+  % Point labels for the proofs.
+  penlabels(1, 2, 3, 4);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar("Z", mwidth);
+  % All strokes are at twenty degrees.
+  pickup pen_td;
+  
+  % Make the left and right extents the offset
+  x1 = x2 = offset;
+  x3 = x4 = w - x1;
+
+  % Make the top and bottom flush
+  bot y1 = bot y3 = 0;
+  top y2 = top y4 = h;
+  
+  % Draw the top and the bottom strokes.
+  draw z2 -- z4;
+  draw z1 -- z3;
+
+  % In order to get the sharp corners on the zig-zag we
+  % need to use a penstroke
+
+  % Fake the pen being at an angle by setting the width to what it
+  % would be if drawn at a twenty degree angle.
+  penpos5(px_td, 0);
+  penpos6(px_td, 0);
+  
+  % Same x coordinates as 1 and 4, but make the y coordinates flush
+  % with the top and the bottom
+  x5 = x4;
+  x6 = x1;
+  y5 = h;
+  y6 = 0;
+
+  % Draw the angle stroke
+  penstroke z5e -- z6e;
+
+  % Place the labels for the proofs
+  penlabels(1, 2, 3, 4, 5, 6);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar(".", px#/u#); 
+  % The only stroke is at forty-five degrees
+  pickup pen_ffd; 
+  
+  % Make period for a short stroke  
+  % Place exactly in the middle
+  x2 = 0.5w; 
+  x1 = offset+0.2px;
+  x3 = w - x1;
+
+  y1 = 0.3px;
+  y2 = 0;
+  y3 = -0.3px;
+  
+  draw z1 -- z3;
+
+  % Place the labels for the proofs
+  penlabels(1, 2, 3);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+begincdchar(",", px#/u#); 
+  % The only stroke is at twenty degrees
+  pickup pen_ffd; 
+  
+  % Make period for a short stroke  
+  % Place exactly in the middle
+  x2 = 0.5w; 
+  x1 = x4 = offset+0.2px;
+  x3 = w - x1;
+   
+
+  y1 = 0.3px;
+  y2 = 0;
+  y3 = -0.3px;
+  y4 = -1.5px;
+  
+  
+  draw z1 -- z3 -- z4;
+
+  % Place the labels for the proofs
+  penlabels(1, 2, 3);
+endchar;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Kerning and ligature table -- currently no ligatures, so just kerning.
+
+% Claudius Roman seems to need extensive kerning.  I'm not sure if this
+% indicates that my per letter sizing is broken.
+
+ligtable "A": "C" kern -1.5u#, "G" kern -1u#, "M" kern -1.5u#, "S" kern -1.5u#, 
+              "T" kern -3u#, "U" kern -1.5u#;
+ligtable "C": "A" kern -2.5u#, "D" kern -1u#, "E" kern -1.25u#, "H" kern -2u#, 
+              "I" kern -2u#, "L" kern -1u#, "O" kern -3.5u#, "R" kern -2u#,
+              "T" kern -2.5u#, "U" kern -1.5u#;
+ligtable "D": "A" kern -2u#, "E" kern -1u#, "I" kern 0.25u#, "O" kern -2.5u#, 
+              "U" kern -1u#, "V" kern -1u#, "." kern -2u#, "," kern -2u#;
+ligtable "E": "A" kern -1u#, "B" kern -1u#, "C" kern -2.5u#, "D" kern -1u#, 
+              "F" kern -2u#, "G" kern -1u#, "L" kern -2u#, 
+              "M" kern -2.5u#, "N" kern -1u#, "O" kern -2u#, 
+              "Q" kern -2u#, "R" kern -1.5u#, "S" kern -2.5u#, 
+              "T" kern -2u#, "U" kern -2u#,
+              "X" kern -1.5u#;
+ligtable "F": "A" kern -3u#, "E" kern -2u#, "F" kern -2u#, 
+              "G" kern -3u#, "O" kern -2u#, "R" kern -1u#;
+ligtable "G": "A" kern -1u#, "E" kern -1u#,
+              "N" kern -1.5u#, "R" kern -1u#,
+              "U" kern -1u#;
+ligtable "H": "I" kern 1u#;
+ligtable "I": "B" kern 0.5u#, "C" kern 0.5u#, "D" kern 0.5u#, 
+              "E" kern 0.5u#, "I" kern 1u#, "L" kern 1u#, "N" kern 0.5u#, 
+              "Q" kern 0.5u#, "S" kern 0.5u#, "T" kern -1u#, "U" kern 0.5u#;
+ligtable "J": "E" kern -4u#;
+ligtable "L": "A" kern -1u#, "O" kern -2u#, "T" kern -5u#, 
+              "U" kern -1.5u#, "Y" kern -3u#;
+ligtable "M": "A" kern -1.5u#, "E" kern -1u#, "O" kern -2u#,
+              "U" kern -1u#, "," kern -0.5u#;
+ligtable "N": "I" kern 0.5u#, "O" kern -1u#, "T" kern -1u#;
+ligtable "O": "C" kern -0.5u#, "F" kern -1u#, "M" kern -1.5u#,
+              "T" kern -2.5u#, "." kern -0.5u#, "," kern -0.5u#;
+ligtable "P": "E" kern -0.5u#, "I" kern 0u#, "O" kern -0.5u#, "Q" kern -1u#,
+              "R" kern -1u#, 
+              "S" kern -1u#, "T" kern -2.25u#;
+ligtable "R": "T" kern -1u#;
+ligtable "S": "A" kern -0.5u#, "C" kern -1u#, "O" kern -1.5u#, "T" kern -2.5u#;
+ligtable "T": "A" kern -4u#, "E" kern -1.5u#, "H" kern -2.5u#,
+              "I" kern -2u#,
+              "O" kern -2u#, "R" kern -2u#, "U" kern -2u#, 
+              "." kern -4u#, "," kern -4u#;
+ligtable "U": "A" kern -1.5u#, "I" kern 0.5u#,
+              "M" kern -1.5u#, "S" kern -0.5u#, "T" kern -1u#;
+ligtable "V": "A" kern -4u#, "E" kern -1u#, "O" kern -2.5u#;
+ligtable "W": "A" kern -3u#, "O" kern -2u#;
+ligtable "Y": "G" kern -2.5u#, "O" kern -2u#;
+
+% Invisible character left of a word
+ligtable ||: "A" kern -0.5u#, "E" kern 1.5u#, "F" kern 1.5u#, 
+             "I" kern 1u#, "T" kern -1u#;
+
+% Define the witdh of an em
+font_quad := 18u#;
+
+% Interword spacing
+font_normal_space := 8u#;
+font_normal_stretch := 3u#;
+font_normal_shrink := 2u#;
+
+font_identifier := "claudrm";
+font_coding_scheme := "T1";
